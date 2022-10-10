@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
 )
 
 func main() {
@@ -159,6 +161,7 @@ func Add(a, b int) (ret int, err error) {
 	return a + b, nil
 }
 
+// 不定参数
 func myfunc(args ...int) (ret int) {
 	result := 0
 	for _, i := range args {
@@ -178,7 +181,7 @@ func GetName() (firstName, lastName, nickName string) {
 }
 
 // 常量
-const Pi float64 = 3.1415026
+const Pi float64 = 3.1415926
 const (
 	size int = 101
 	eof      = -1
@@ -197,3 +200,51 @@ const (
 	d1 = iota
 	d2 = iota
 )
+
+// 自定义错误类型
+type PathError struct {
+	Op   string
+	Path string
+	Err  error
+}
+
+func (e PathError) Error() string {
+	return e.Op + " " + e.Path + " " + e.Err.Error()
+}
+
+// func Stat(name string) (fi FileInfo, err error) {
+
+// }
+
+// defer 用法
+// 即使其中的Copy()函数抛出异常， Go仍然会保证dstFile和srcFile会被正常关闭。
+// defer语句的调用是遵照先进后出的原则，即最后一个defer语句将最先被执行。
+func CopyFile(dst, src string) (w int64, err error) {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return
+	}
+
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+
+	defer dstFile.Close()
+
+	return io.Copy(dstFile, srcFile)
+}
+
+//Go语言引入了两个内置函数panic()和recover()以报告和处理运行时错误和程序中的错误场景：
+// func panic(interface{})
+// func recover() interface{}
+// 当在一个函数执行过程中调用panic()函数时，正常的函数执行流程将立即终止，但函数中
+// 之前使用defer关键字延迟执行的语句将正常展开执行，之后该函数将返回到调用函数，并导致
+// 逐层向上执行panic流程，直至所属的goroutine中所有正在执行的函数被终止。错误信息将被报
+// 告，包括在调用panic()函数时传入的参数，这个过程称为错误处理流程。该函数接收任意类型的数据
+
+// recover()函数用于终止错误处理流程。一般情况下， recover()应该在一个使用defer
+// 关键字的函数中执行以有效截取错误处理流程。如果没有在发生异常的goroutine中明确调用恢复
+// 过程（使用recover关键字），会导致该goroutine所属的进程打印异常信息后直接退出。
